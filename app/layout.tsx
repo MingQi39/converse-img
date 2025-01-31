@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "明琦的博客 | MingQi's Blog",
+  title: "压缩助手",
   icons: {
     icon: "/favicon.svg",
   },
