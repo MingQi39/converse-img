@@ -7,12 +7,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"image" | "video">("image");
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-10 px-4">
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-6 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">文件压缩工具</h1>
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-4">文件压缩工具</h1>
 
         {/* Tab 切换按钮 */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-6">
           <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-white">
             <button
               onClick={() => setActiveTab("image")}

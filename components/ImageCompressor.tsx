@@ -4,29 +4,51 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 
+interface CompressionInfo {
+  width?: number;
+  height?: number;
+  originalFormat?: string;
+  compressionRatio?: string;
+}
+
 export default function ImageCompressor() {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [compressedImage, setCompressedImage] = useState<string | null>(null);
   const [quality, setQuality] = useState(80);
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [compressedSize, setCompressedSize] = useState<number>(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState<CompressionInfo>({});
 
   const compressImage = async (file: File, compressionQuality: number) => {
+    setIsCompressing(true);
     const formData = new FormData();
     formData.append("image", file);
     formData.append("quality", compressionQuality.toString());
 
     try {
-      const response = await fetch("/api/compress", {
+      const response = await fetch("/api/image-compress", {
         method: "POST",
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error("压缩失败");
+      }
+
       const data = await response.json();
       setCompressedImage(data.compressedImage);
       setCompressedSize(data.size);
+      setCompressionInfo({
+        width: data.width,
+        height: data.height,
+        originalFormat: data.originalFormat,
+        compressionRatio: data.compressionRatio
+      });
     } catch (error) {
       console.error("压缩失败:", error);
+    } finally {
+      setIsCompressing(false);
     }
   };
 
@@ -65,11 +87,11 @@ export default function ImageCompressor() {
       <div className="space-y-6">
         {/* 上传区域 */}
         <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="imageInput" />
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic" onChange={handleImageUpload} className="hidden" id="imageInput" />
           <label htmlFor="imageInput" className="cursor-pointer block">
             <div className="space-y-2">
               <div className="text-gray-600">点击或拖拽上传图片</div>
-              <div className="text-sm text-gray-500">支持 PNG、JPG 等格式</div>
+              <div className="text-sm text-gray-500">支持 JPG、PNG、WebP、GIF、BMP、TIFF、HEIC 等格式</div>
             </div>
           </label>
         </div>
@@ -86,16 +108,42 @@ export default function ImageCompressor() {
             <div className="space-y-2">
               <div className="text-sm font-medium text-gray-700">原图</div>
               <img src={URL.createObjectURL(originalImage)} alt="原图" className="w-full rounded-lg" />
-              <div className="text-sm text-gray-500">大小: {(originalSize / 1024).toFixed(2)} KB</div>
+              <div className="space-y-1">
+                <div className="text-sm text-gray-500">大小: {(originalSize / 1024).toFixed(2)} KB</div>
+                {compressionInfo.width && compressionInfo.height && (
+                  <div className="text-sm text-gray-500">
+                    尺寸: {compressionInfo.width} x {compressionInfo.height}
+                  </div>
+                )}
+                {compressionInfo.originalFormat && (
+                  <div className="text-sm text-gray-500">
+                    格式: {compressionInfo.originalFormat.toUpperCase()}
+                  </div>
+                )}
+              </div>
             </div>
 
             {compressedImage && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-700">压缩后</div>
                 <img src={compressedImage} alt="压缩后" className="w-full rounded-lg" />
-                <div className="text-sm text-gray-500">大小: {(compressedSize / 1024).toFixed(2)} KB</div>
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-500">大小: {(compressedSize / 1024).toFixed(2)} KB</div>
+                  {compressionInfo.compressionRatio && (
+                    <div className="text-sm text-gray-500">
+                      压缩率: {compressionInfo.compressionRatio}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 加载状态 */}
+        {isCompressing && (
+          <div className="text-center text-sm text-gray-500">
+            正在压缩图片...
           </div>
         )}
 
