@@ -2,7 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ["*"],
+      bodySizeLimit: "2mb",
+    },
+    serverComponentsExternalPackages: ["fluent-ffmpeg", "@ffmpeg-installer/ffmpeg"],
   },
   webpack: (config) => {
     config.resolve.alias = {
@@ -18,7 +22,6 @@ const nextConfig = {
     ];
     return config;
   },
-  serverComponentsExternalPackages: ["fluent-ffmpeg", "@ffmpeg-installer/ffmpeg"],
 };
 
 module.exports = nextConfig;

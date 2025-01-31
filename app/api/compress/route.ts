@@ -70,9 +70,9 @@ const compressVideo = (inputPath: string, outputPath: string): Promise<void> => 
           return;
         }
 
-        const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+        const videoStream = metadata.streams.find((s) => s.codec_type === "video");
         if (!videoStream) {
-          reject(new Error('未找到视频流'));
+          reject(new Error("未找到视频流"));
           return;
         }
 
@@ -80,11 +80,10 @@ const compressVideo = (inputPath: string, outputPath: string): Promise<void> => 
         const width = videoStream.width || 1920;
         const height = videoStream.height || 1080;
         const bitrate = videoStream.bit_rate ? parseInt(videoStream.bit_rate) : 0;
-        const fps = videoStream.r_frame_rate ? 
-          Math.round(eval(videoStream.r_frame_rate)) : 30;
-        
+        const fps = videoStream.r_frame_rate ? Math.round(eval(videoStream.r_frame_rate)) : 30;
+
         // 计算目标比特率，考虑分辨率和帧率
-        let targetBitrate = '1M'; // 默认目标比特率
+        let targetBitrate = "1M"; // 默认目标比特率
         if (bitrate) {
           // 根据分辨率和帧率调整比特率
           const resolutionFactor = (width * height) / (1920 * 1080);
@@ -97,17 +96,22 @@ const compressVideo = (inputPath: string, outputPath: string): Promise<void> => 
         }
 
         // 根据分辨率和视频长度选择编码预设
-        let preset = 'medium';
-        const duration = parseFloat(metadata.format.duration || "0");
-        if (width * height > 1920 * 1080 || duration > 600) { // 10分钟以上的视频
-          preset = 'slow'; // 高分辨率或长视频使用更好的压缩
-        } else if (width * height < 1280 * 720 && duration < 60) { // 1分钟以下的小视频
-          preset = 'faster';
+        let preset = "medium";
+        const duration =
+          typeof metadata.format.duration === "string"
+            ? parseFloat(metadata.format.duration)
+            : metadata.format.duration || 0;
+        if (width * height > 1920 * 1080 || duration > 600) {
+          // 10分钟以上的视频
+          preset = "slow"; // 高分辨率或长视频使用更好的压缩
+        } else if (width * height < 1280 * 720 && duration < 60) {
+          // 1分钟以下的小视频
+          preset = "faster";
         }
 
         // 设置编码参数
-        const command = ffmpeg(inputPath)
-          .outputOptions([
+        const command = ffmpeg(inputPath).outputOptions(
+          [
             "-c:v libx264", // 使用 H.264 编码
             `-preset ${preset}`,
             `-b:v ${targetBitrate}`,
@@ -121,24 +125,25 @@ const compressVideo = (inputPath: string, outputPath: string): Promise<void> => 
             "-c:a aac",
             "-b:a 128k",
             "-ar 44100", // 音频采样率
-            "-y"
-          ].filter(Boolean)); // 移除空字符串
+            "-y",
+          ].filter(Boolean)
+        ); // 移除空字符串
 
         // 对于高分辨率视频，考虑降低分辨率
         if (width * height > 1920 * 1080) {
           const scale = Math.min(1920 / width, 1080 / height);
-          const newWidth = Math.round(width * scale / 2) * 2; // 确保是2的倍数
-          const newHeight = Math.round(height * scale / 2) * 2;
+          const newWidth = Math.round((width * scale) / 2) * 2; // 确保是2的倍数
+          const newHeight = Math.round((height * scale) / 2) * 2;
           command.size(`${newWidth}x${newHeight}`);
         }
 
-        command.output(outputPath)
+        command
+          .output(outputPath)
           .on("start", (commandLine) => {
             console.log("FFmpeg 开始执行，命令行:", commandLine);
           })
           .on("progress", (progress) => {
-            const percent = progress.percent ? 
-              Math.min(Math.round(progress.percent * 10) / 10, 100) : 0;
+            const percent = progress.percent ? Math.min(Math.round(progress.percent * 10) / 10, 100) : 0;
             console.log("压缩进度:", `${percent}%`);
             setCompressionProgress(percent);
           })
